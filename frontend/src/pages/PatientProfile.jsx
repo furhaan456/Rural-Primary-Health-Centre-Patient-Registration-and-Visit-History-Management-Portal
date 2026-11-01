@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import API from '../services/api';
-import { User, Phone, MapPin, Calendar, Clock, PlusCircle, FileText } from 'lucide-react';
+import { User, Phone, MapPin, Calendar, Clock, PlusCircle, FileText, Pill } from 'lucide-react';
 
 const PatientProfile = () => {
   const { id } = useParams();
@@ -147,8 +147,57 @@ const PatientProfile = () => {
                       </div>
 
                       {v.diagnosis && (
-                        <div className="text-xs bg-emerald-50 p-2 rounded border border-emerald-100 text-emerald-800">
+                        <div className="text-xs bg-emerald-50 p-2.5 rounded-lg border border-emerald-100 text-emerald-800">
                           <span className="font-bold">Doctor Diagnosis:</span> {v.diagnosis}
+                        </div>
+                      )}
+
+                      {/* Doctor's Prescription Details */}
+                      {v.prescription && v.prescription.items && v.prescription.items.length > 0 && (
+                        <div className="mt-2.5 bg-white p-3 rounded-lg border border-teal-200 shadow-sm space-y-2">
+                          <div className="flex items-center justify-between border-b border-teal-100 pb-1.5">
+                            <span className="text-xs font-bold text-teal-800 flex items-center space-x-1.5">
+                              <Pill className="h-4 w-4 text-teal-600" />
+                              <span>Doctor's Prescription ({v.prescription.items.length} {v.prescription.items.length === 1 ? 'medicine' : 'medicines'})</span>
+                            </span>
+                            {v.doctor_name && (
+                              <span className="text-[11px] text-slate-500 font-medium">Prescribed by {v.doctor_name}</span>
+                            )}
+                          </div>
+
+                          <div className="space-y-1.5">
+                            {v.prescription.items.map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="flex flex-col sm:flex-row sm:items-center justify-between text-xs bg-slate-50 p-2 rounded border border-slate-200/70 gap-1.5"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-bold text-slate-800">
+                                    {item.medicine_name || item.medicineName}
+                                  </span>
+                                  <span className="bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border border-teal-200">
+                                    {item.dosage}
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-600 text-[11px]">
+                                  <span>Frequency: <strong className="text-slate-800 font-medium">{item.frequency}</strong></span>
+                                  <span>Duration: <strong className="text-slate-800 font-medium">{item.duration_days || item.durationDays} days</strong></span>
+                                  {item.instructions && (
+                                    <span className="text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 text-[10px]">
+                                      {item.instructions}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {v.prescription.notes && (
+                            <p className="text-xs text-slate-500 italic pt-1">
+                              <span className="font-semibold text-slate-600 not-italic">Notes:</span> {v.prescription.notes}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>

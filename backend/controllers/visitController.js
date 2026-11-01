@@ -1,5 +1,5 @@
 // Visit management controller for OPD token queue, vitals, and visit history with MongoDB Atlas support
-const { getIsConnected, Visit, Patient, User, memoryDb } = require('../config/db');
+const { getIsConnected, Visit, Patient, User, Prescription, memoryDb } = require('../config/db');
 
 // Create today's OPD visit token
 const createVisit = async (req, res) => {
@@ -128,21 +128,32 @@ const getPatientVisits = async (req, res) => {
     if (getIsConnected()) {
       const rawVisits = await Visit.find({ patient_id: patIdNum }).sort({ id: -1 }).lean();
       const users = await User.find({}).lean();
+      const visitIds = rawVisits.map(v => Number(v.id));
+      const prescriptions = await Prescription.find({
+        $or: [
+          { visit_id: { $in: visitIds } },
+          { patient_id: patIdNum }
+        ]
+      }).lean();
 
       visits = rawVisits.map(v => {
-        const doc = users.find(u => u.id === v.doctor_id) || {};
+        const doc = users.find(u => Number(u.id) === Number(v.doctor_id)) || {};
+        const pres = prescriptions.find(p => Number(p.visit_id) === Number(v.id)) || null;
         return {
           ...v,
-          doctor_name: doc.full_name || 'Doctor'
+          doctor_name: doc.full_name || 'Doctor',
+          prescription: pres
         };
       });
     } else {
-      const rawVisits = memoryDb.visits.filter(v => v.patient_id === patIdNum);
+      const rawVisits = memoryDb.visits.filter(v => Number(v.patient_id) === patIdNum);
       visits = rawVisits.map(v => {
-        const doc = memoryDb.users.find(u => u.id === v.doctor_id) || {};
+        const doc = memoryDb.users.find(u => Number(u.id) === Number(v.doctor_id)) || {};
+        const pres = (memoryDb.prescriptions || []).find(p => Number(p.visit_id) === Number(v.id)) || null;
         return {
           ...v,
-          doctor_name: doc.full_name || 'Doctor'
+          doctor_name: doc.full_name || 'Doctor',
+          prescription: pres
         };
       });
     }
@@ -187,7 +198,7 @@ const updateVisitDiagnosis = async (req, res) => {
   }
 };
 
-// Get single visit details by ID including patient information
+// Get single visit details by ID including patient information and prescription
 const getVisitById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -195,16 +206,19 @@ const getVisitById = async (req, res) => {
 
     let visit = null;
     let patient = null;
+    let prescription = null;
 
     if (getIsConnected()) {
       visit = await Visit.findOne({ id: visitIdNum }).lean();
       if (visit) {
         patient = await Patient.findOne({ id: visit.patient_id }).lean();
+        prescription = await Prescription.findOne({ visit_id: visitIdNum }).lean();
       }
     } else {
       visit = memoryDb.visits.find(v => v.id === visitIdNum);
       if (visit) {
         patient = memoryDb.patients.find(p => p.id === visit.patient_id);
+        prescription = (memoryDb.prescriptions || []).find(p => Number(p.visit_id) === visitIdNum) || null;
       }
     }
 
@@ -221,7 +235,8 @@ const getVisitById = async (req, res) => {
         last_name: patient ? patient.last_name : '',
         age: patient ? patient.age : null,
         gender: patient ? patient.gender : '',
-        phone: patient ? patient.phone : ''
+        phone: patient ? patient.phone : '',
+        prescription
       }
     });
   } catch (error) {
