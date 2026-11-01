@@ -4,16 +4,18 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import API from '../services/api';
-import { User, Phone, MapPin, Calendar, Clock, PlusCircle, FileText, Pill } from 'lucide-react';
+import { Phone, MapPin, Clock, PlusCircle } from 'lucide-react';
 
 const PatientProfile = () => {
   const { id } = useParams();
   const [patient, setPatient] = useState(null);
   const [visits, setVisits] = useState([]);
+  const [prescriptions, setPrescriptions] = useState({});
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
+  // Fetch patient details and visit history
   useEffect(() => {
     const fetchProfileAndVisits = async () => {
       try {
@@ -34,6 +36,20 @@ const PatientProfile = () => {
     };
     fetchProfileAndVisits();
   }, [id]);
+
+  // Fetch prescriptions for each visit once visits are loaded
+  useEffect(() => {
+    if (visits.length === 0) return;
+    visits.forEach((v) => {
+      API.get(`/prescriptions/${v.id}`)
+        .then((res) => {
+          if (res.data.success) {
+            setPrescriptions((prev) => ({ ...prev, [v.id]: res.data.prescription }));
+          }
+        })
+        .catch(console.error);
+    });
+  }, [visits]);
 
   if (loading) {
     return (
@@ -91,7 +107,7 @@ const PatientProfile = () => {
             {/* Demographics Card */}
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
               <h3 className="text-base font-semibold text-slate-800 border-b border-slate-100 pb-2">Patient Contact Info</h3>
-              
+
               <div className="space-y-3 text-sm">
                 <div className="flex items-start space-x-3 text-slate-600">
                   <Phone className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" />
@@ -132,12 +148,14 @@ const PatientProfile = () => {
                 <div className="space-y-4">
                   {visits.map((v) => (
                     <div key={v.id} className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
+                      {/* Visit Header */}
                       <div className="flex justify-between items-center text-xs">
                         <span className="font-mono font-bold text-teal-700">{v.visit_code}</span>
                         <span className="text-slate-500 font-medium">{v.visit_date}</span>
                       </div>
+
                       <p className="text-sm font-semibold text-slate-800">Complaint: {v.chief_complaint}</p>
-                      
+
                       {/* Vitals Grid */}
                       <div className="grid grid-cols-4 gap-2 bg-white p-2 rounded border border-slate-200 text-xs text-center text-slate-600">
                         <div>Temp: <span className="font-bold text-slate-800">{v.temp_celsius || '--'} °C</span></div>
@@ -146,58 +164,39 @@ const PatientProfile = () => {
                         <div>Weight: <span className="font-bold text-slate-800">{v.weight_kg || '--'} kg</span></div>
                       </div>
 
+                      {/* Doctor Diagnosis */}
                       {v.diagnosis && (
-                        <div className="text-xs bg-emerald-50 p-2.5 rounded-lg border border-emerald-100 text-emerald-800">
+                        <div className="text-xs bg-emerald-50 p-2 rounded border border-emerald-100 text-emerald-800">
                           <span className="font-bold">Doctor Diagnosis:</span> {v.diagnosis}
                         </div>
                       )}
 
-                      {/* Doctor's Prescription Details */}
-                      {v.prescription && v.prescription.items && v.prescription.items.length > 0 && (
-                        <div className="mt-2.5 bg-white p-3 rounded-lg border border-teal-200 shadow-sm space-y-2">
-                          <div className="flex items-center justify-between border-b border-teal-100 pb-1.5">
-                            <span className="text-xs font-bold text-teal-800 flex items-center space-x-1.5">
-                              <Pill className="h-4 w-4 text-teal-600" />
-                              <span>Doctor's Prescription ({v.prescription.items.length} {v.prescription.items.length === 1 ? 'medicine' : 'medicines'})</span>
-                            </span>
-                            {v.doctor_name && (
-                              <span className="text-[11px] text-slate-500 font-medium">Prescribed by {v.doctor_name}</span>
-                            )}
-                          </div>
-
-                          <div className="space-y-1.5">
-                            {v.prescription.items.map((item, idx) => (
-                              <div
-                                key={idx}
-                                className="flex flex-col sm:flex-row sm:items-center justify-between text-xs bg-slate-50 p-2 rounded border border-slate-200/70 gap-1.5"
-                              >
-                                <div className="flex items-center space-x-2">
-                                  <span className="font-bold text-slate-800">
-                                    {item.medicine_name || item.medicineName}
-                                  </span>
-                                  <span className="bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border border-teal-200">
-                                    {item.dosage}
-                                  </span>
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-600 text-[11px]">
-                                  <span>Frequency: <strong className="text-slate-800 font-medium">{item.frequency}</strong></span>
-                                  <span>Duration: <strong className="text-slate-800 font-medium">{item.duration_days || item.durationDays} days</strong></span>
-                                  {item.instructions && (
-                                    <span className="text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 text-[10px]">
-                                      {item.instructions}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-
-                          {v.prescription.notes && (
-                            <p className="text-xs text-slate-500 italic pt-1">
-                              <span className="font-semibold text-slate-600 not-italic">Notes:</span> {v.prescription.notes}
-                            </p>
-                          )}
+                      {/* Prescriptions */}
+                      {prescriptions[v.id] && prescriptions[v.id].items && prescriptions[v.id].items.length > 0 && (
+                        <div className="text-xs bg-blue-50 p-2 rounded border border-blue-100 text-blue-900">
+                          <p className="font-bold mb-1">Prescriptions:</p>
+                          <table className="w-full text-xs border-collapse">
+                            <thead>
+                              <tr className="bg-blue-100 text-blue-800">
+                                <th className="p-1 text-left">Medicine</th>
+                                <th className="p-1 text-left">Dosage</th>
+                                <th className="p-1 text-left">Frequency</th>
+                                <th className="p-1 text-left">Duration</th>
+                                <th className="p-1 text-left">Instructions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {prescriptions[v.id].items.map((p, i) => (
+                                <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-blue-50'}>
+                                  <td className="p-1">{p.medicine_name}</td>
+                                  <td className="p-1">{p.dosage}</td>
+                                  <td className="p-1">{p.frequency}</td>
+                                  <td className="p-1">{p.duration}</td>
+                                  <td className="p-1">{p.instructions}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       )}
                     </div>
