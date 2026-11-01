@@ -1,7 +1,7 @@
 // Express Router for Visit endpoints (/api/visits)
 const express = require('express');
 const router = express.Router();
-const { createVisit, getTodayQueue, getPatientVisits, updateVisitDiagnosis } = require('../controllers/visitController');
+const { createVisit, getTodayQueue, getPatientVisits, updateVisitDiagnosis, getVisitById } = require('../controllers/visitController');
 const { verifyToken } = require('../middleware/authMiddleware');
 const { authorizeRoles } = require('../middleware/roleMiddleware');
 
@@ -10,6 +10,9 @@ router.get('/queue/today', verifyToken, getTodayQueue);
 
 // Get visit history for a specific patient
 router.get('/patient/:patientId', verifyToken, getPatientVisits);
+
+// Get specific visit by ID (Doctor, Receptionist, Admin)
+router.get('/:id', verifyToken, getVisitById);
 
 // Create today's visit (Receptionist, Admin)
 router.post('/', verifyToken, authorizeRoles('admin', 'receptionist'), createVisit);

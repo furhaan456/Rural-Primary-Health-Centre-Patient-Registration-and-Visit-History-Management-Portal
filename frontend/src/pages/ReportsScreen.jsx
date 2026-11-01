@@ -123,7 +123,14 @@ const ReportsScreen = () => {
                 <span>Village-wise Patient Distribution (Bar Chart)</span>
               </h3>
               <div className="h-64 flex justify-center items-center">
-                <Bar data={villageBarData} options={{ responsive: true, maintainAspectRatio: false }} />
+                <Bar
+                  data={villageBarData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0, stepSize: 1 } } }
+                  }}
+                />
               </div>
             </div>
 
@@ -133,7 +140,14 @@ const ReportsScreen = () => {
                 <span>OPD Visit Trend Over Time (Line Chart)</span>
               </h3>
               <div className="h-64 flex justify-center items-center">
-                <Line data={lineTrendData} options={{ responsive: true, maintainAspectRatio: false }} />
+                <Line
+                  data={lineTrendData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0, stepSize: 1 } } }
+                  }}
+                />
               </div>
             </div>
           </div>

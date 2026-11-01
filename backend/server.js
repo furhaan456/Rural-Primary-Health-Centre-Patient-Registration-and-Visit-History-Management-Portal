@@ -48,13 +48,14 @@ app.get('/api/health', (req, res) => {
 
 // Start Server & Initialize Database
 const startServer = (port) => {
-  const server = app.listen(port, () => {
-    console.log(`🚀 Rural PHC Portal Backend server listening on port ${port}`);
-    console.log(`📍 Health Check: http://localhost:${port}/api/health`);
+  const numericPort = Number(port);
+  const server = app.listen(numericPort, () => {
+    console.log(`🚀 Rural PHC Portal Backend server listening on port ${numericPort}`);
+    console.log(`📍 Health Check: http://localhost:${numericPort}/api/health`);
   }).on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.log(`⚠️ Port ${port} is in use, trying port ${port + 1}...`);
-      startServer(port + 1);
+      console.log(`⚠️ Port ${numericPort} is in use, trying port ${numericPort + 1}...`);
+      startServer(numericPort + 1);
     } else {
       console.error('Server error:', err);
     }

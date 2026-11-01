@@ -187,4 +187,47 @@ const updateVisitDiagnosis = async (req, res) => {
   }
 };
 
-module.exports = { createVisit, getTodayQueue, getPatientVisits, updateVisitDiagnosis };
+// Get single visit details by ID including patient information
+const getVisitById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const visitIdNum = Number(id);
+
+    let visit = null;
+    let patient = null;
+
+    if (getIsConnected()) {
+      visit = await Visit.findOne({ id: visitIdNum }).lean();
+      if (visit) {
+        patient = await Patient.findOne({ id: visit.patient_id }).lean();
+      }
+    } else {
+      visit = memoryDb.visits.find(v => v.id === visitIdNum);
+      if (visit) {
+        patient = memoryDb.patients.find(p => p.id === visit.patient_id);
+      }
+    }
+
+    if (!visit) {
+      return res.status(404).json({ success: false, message: 'Visit not found.' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      visit: {
+        ...visit,
+        patient_code: patient ? patient.patient_code : null,
+        first_name: patient ? patient.first_name : '',
+        last_name: patient ? patient.last_name : '',
+        age: patient ? patient.age : null,
+        gender: patient ? patient.gender : '',
+        phone: patient ? patient.phone : ''
+      }
+    });
+  } catch (error) {
+    console.error('Get Visit By ID Error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to retrieve visit details.' });
+  }
+};
+
+module.exports = { createVisit, getTodayQueue, getPatientVisits, updateVisitDiagnosis, getVisitById };

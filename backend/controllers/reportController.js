@@ -43,25 +43,44 @@ const getOverviewStats = async (req, res) => {
       });
     }
 
-    if (villageDistribution.length === 0) {
-      villageDistribution = [
-        { village_name: 'Rampur', patient_count: 24 },
-        { village_name: 'Shyampur', patient_count: 18 },
-        { village_name: 'Chandpur', patient_count: 15 },
-        { village_name: 'Gobindpur', patient_count: 9 }
-      ];
+    // Calculate real weekly OPD visit trend (Monday through Sunday of the current week)
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 is Sunday, 1 is Monday...
+    const distanceToMon = (dayOfWeek + 6) % 7;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - distanceToMon);
+
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const visitTrend = [];
+
+    let allVisits = [];
+    if (getIsConnected()) {
+      allVisits = await Visit.find({}).lean();
+    } else {
+      allVisits = memoryDb.visits;
     }
 
-    // Weekly visit trend (last 7 days)
-    const visitTrend = [
-      { day: 'Mon', visits: 12 },
-      { day: 'Tue', visits: 19 },
-      { day: 'Wed', visits: 15 },
-      { day: 'Thu', visits: 22 },
-      { day: 'Fri', visits: 18 },
-      { day: 'Sat', visits: 25 },
-      { day: 'Sun', visits: 10 }
-    ];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+
+      const count = allVisits.filter(v => {
+        if (v.visit_date === dateStr) return true;
+        if (v.created_at && v.created_at.startsWith(dateStr)) return true;
+        if (v.createdAt) {
+          const cDate = new Date(v.createdAt).toISOString().split('T')[0];
+          if (cDate === dateStr) return true;
+        }
+        return false;
+      }).length;
+
+      visitTrend.push({
+        day: dayLabels[i],
+        date: dateStr,
+        visits: count
+      });
+    }
 
     return res.status(200).json({
       success: true,

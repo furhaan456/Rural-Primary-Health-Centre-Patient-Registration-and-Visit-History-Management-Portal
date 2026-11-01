@@ -7,8 +7,23 @@ const addPrescription = async (req, res) => {
     const { visitId, patientId, doctorId, notes, items } = req.body;
     const docId = doctorId || req.user.id;
 
-    if (!visitId || !patientId || !items || !Array.isArray(items) || items.length === 0) {
+    if (!visitId || (!patientId && !visitId) || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: 'Visit ID, Patient ID, and prescription medicines are required.' });
+    }
+
+    // Resolve accurate patientId from Visit record if available
+    let effectivePatientId = patientId ? Number(patientId) : null;
+    if (visitId) {
+      const vId = Number(visitId);
+      let v = null;
+      if (getIsConnected()) {
+        v = await Visit.findOne({ id: vId }).lean();
+      } else {
+        v = memoryDb.visits.find(item => item.id === vId);
+      }
+      if (v && v.patient_id) {
+        effectivePatientId = Number(v.patient_id);
+      }
     }
 
     let prescriptionId = 1;
@@ -28,7 +43,7 @@ const addPrescription = async (req, res) => {
       await Prescription.create({
         id: prescriptionId,
         visit_id: Number(visitId),
-        patient_id: Number(patientId),
+        patient_id: effectivePatientId,
         doctor_id: Number(docId),
         notes: notes || null,
         items: formattedItems
@@ -40,7 +55,7 @@ const addPrescription = async (req, res) => {
       memoryDb.prescriptions.push({
         id: prescriptionId,
         visit_id: Number(visitId),
-        patient_id: Number(patientId),
+        patient_id: effectivePatientId,
         doctor_id: Number(docId),
         notes: notes || null,
         items: formattedItems

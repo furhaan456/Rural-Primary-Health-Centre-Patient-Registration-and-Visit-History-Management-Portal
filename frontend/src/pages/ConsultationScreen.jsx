@@ -14,11 +14,34 @@ const ConsultationScreen = () => {
   const [items, setItems] = useState([
     { medicineName: 'Paracetamol', dosage: '500mg', frequency: '1-0-1', durationDays: '5', instructions: 'Take after food' }
   ]);
-  const [patientId, setPatientId] = useState(1);
+  const [patientId, setPatientId] = useState(null);
+  const [visitDetails, setVisitDetails] = useState(null);
+  const [loadingVisit, setLoadingVisit] = useState(true);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchVisit = async () => {
+      try {
+        const res = await API.get(`/visits/${visitId}`);
+        if (res.data.success && res.data.visit) {
+          const v = res.data.visit;
+          setVisitDetails(v);
+          setPatientId(v.patient_id);
+          if (v.diagnosis) {
+            setDiagnosis(v.diagnosis);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load visit details:', err);
+      } finally {
+        setLoadingVisit(false);
+      }
+    };
+    fetchVisit();
+  }, [visitId]);
 
   const handleAddItem = () => {
     setItems([...items, { medicineName: '', dosage: '500mg', frequency: '1-0-1', durationDays: '5', instructions: 'Take after food' }]);
@@ -44,6 +67,12 @@ const ConsultationScreen = () => {
       return;
     }
 
+    const activePatientId = visitDetails?.patient_id || patientId;
+    if (!activePatientId) {
+      setError('Patient record could not be identified for this visit.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // 1. Record Diagnosis on Visit
@@ -52,7 +81,7 @@ const ConsultationScreen = () => {
       // 2. Add Prescription
       await API.post('/prescriptions', {
         visitId: Number(visitId),
-        patientId,
+        patientId: Number(activePatientId),
         items
       });
 
@@ -60,7 +89,7 @@ const ConsultationScreen = () => {
       if (followUpDate && followUpReason) {
         await API.post('/follow-ups', {
           visitId: Number(visitId),
-          patientId,
+          patientId: Number(activePatientId),
           followUpDate,
           reason: followUpReason
         });
@@ -93,6 +122,56 @@ const ConsultationScreen = () => {
             <div className="mb-4 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg flex items-center space-x-2 text-sm">
               <AlertCircle className="h-5 w-5 shrink-0" />
               <span>{error}</span>
+            </div>
+          )}
+
+          {/* Patient Details Card */}
+          {visitDetails && (
+            <div className="mb-6 bg-white p-5 rounded-xl border border-teal-200 shadow-sm bg-gradient-to-r from-teal-50/50 to-white">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-teal-100 pb-3 mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-teal-600 text-white p-2.5 rounded-full font-bold text-sm">
+                    {visitDetails.first_name ? visitDetails.first_name[0] : 'P'}{visitDetails.last_name ? visitDetails.last_name[0] : ''}
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <h3 className="text-lg font-bold text-slate-800">
+                        {visitDetails.first_name} {visitDetails.last_name}
+                      </h3>
+                      <span className="bg-teal-100 text-teal-800 font-mono text-xs px-2 py-0.5 rounded font-semibold border border-teal-300">
+                        {visitDetails.patient_code}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      {visitDetails.age ? `${visitDetails.age} yrs` : ''} • {visitDetails.gender || 'Unknown gender'} • Phone: {visitDetails.phone || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-left md:text-right">
+                  <span className="text-xs text-slate-400 font-mono">Token: {visitDetails.visit_code}</span>
+                  <p className="text-xs text-slate-600 font-medium">Chief Complaint: <span className="text-rose-600 font-semibold">{visitDetails.chief_complaint}</span></p>
+                </div>
+              </div>
+
+              {/* Vitals Summary */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  <span className="text-slate-400 block">Blood Pressure</span>
+                  <span className="font-semibold text-slate-700">{visitDetails.bp_systolic && visitDetails.bp_diastolic ? `${visitDetails.bp_systolic}/${visitDetails.bp_diastolic} mmHg` : 'Not recorded'}</span>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  <span className="text-slate-400 block">Pulse Rate</span>
+                  <span className="font-semibold text-slate-700">{visitDetails.pulse_rate ? `${visitDetails.pulse_rate} bpm` : 'Not recorded'}</span>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  <span className="text-slate-400 block">Temperature</span>
+                  <span className="font-semibold text-slate-700">{visitDetails.temp_celsius ? `${visitDetails.temp_celsius} °C` : 'Not recorded'}</span>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  <span className="text-slate-400 block">Weight</span>
+                  <span className="font-semibold text-slate-700">{visitDetails.weight_kg ? `${visitDetails.weight_kg} kg` : 'Not recorded'}</span>
+                </div>
+              </div>
             </div>
           )}
 

@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: rural-phc-backend
+    env: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        value: phc_super_secret_jwt_key_2026_rural_health
+      - key: MONGODB_URI
+        value: mongodb+srv://mohamedfurhaana_db_user:furhaan786@cluster0.9awhf9e.mongodb.net/phc_portal?appName=Cluster0

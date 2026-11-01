@@ -13,6 +13,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({ totalPatients: 0, visitsToday: 0, totalDoctors: 0, totalVisits: 0 });
+  const [visitTrend, setVisitTrend] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,6 +22,9 @@ const AdminDashboard = () => {
         const res = await API.get('/reports/overview');
         if (res.data.success) {
           setStats(res.data.stats);
+          if (res.data.visitTrend) {
+            setVisitTrend(res.data.visitTrend);
+          }
         }
       } catch (err) {
         console.error('Failed to fetch admin metrics:', err);
@@ -32,17 +36,31 @@ const AdminDashboard = () => {
   }, []);
 
   const chartData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    labels: visitTrend.length > 0 ? visitTrend.map((t) => t.day) : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [
       {
         label: 'OPD Footfall (Visits)',
-        data: [12, 19, 15, 22, 18, 25, 10],
+        data: visitTrend.length > 0 ? visitTrend.map((t) => t.visits) : [0, 0, 0, 0, 0, 0, 0],
         borderColor: '#0d9488',
         backgroundColor: '#ccfbf1',
         tension: 0.3,
         fill: true,
       },
     ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          precision: 0,
+          stepSize: 1
+        }
+      }
+    }
   };
 
   return (
@@ -99,7 +117,7 @@ const AdminDashboard = () => {
                 <span>OPD Patient Visits (Weekly Trend)</span>
               </h3>
               <div className="h-64 flex justify-center items-center">
-                <Line data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />
+                <Line data={chartData} options={chartOptions} />
               </div>
             </div>
 
