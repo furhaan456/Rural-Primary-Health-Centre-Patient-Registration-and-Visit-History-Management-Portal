@@ -34,9 +34,7 @@ const FollowUpsScreen = () => {
     try {
       const res = await API.put(`/follow-ups/${id}/complete`);
       if (res.data.success) {
-        // Remove from list since it's now completed
         setFollowUps((prev) => prev.filter((f) => f.id !== id));
-      }
         toast('Follow-up marked as completed!', 'success');
       }
     } catch (err) {
