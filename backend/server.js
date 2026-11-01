@@ -23,17 +23,24 @@ const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
-// API Route Mounts
-app.use('/api/auth', authRoutes);
-app.use('/api/patients', patientRoutes);
-app.use('/api/visits', visitRoutes);
-app.use('/api/prescriptions', prescriptionRoutes);
-app.use('/api/follow-ups', followUpRoutes);
-app.use('/api/doctors', doctorRoutes);
-app.use('/api/reports', reportRoutes);
+// API Route Mounts (supporting both /api and root paths for maximum client compatibility)
+const apiRoutes = [
+  ['/auth', authRoutes],
+  ['/patients', patientRoutes],
+  ['/visits', visitRoutes],
+  ['/prescriptions', prescriptionRoutes],
+  ['/follow-ups', followUpRoutes],
+  ['/doctors', doctorRoutes],
+  ['/reports', reportRoutes]
+];
+
+apiRoutes.forEach(([path, router]) => {
+  app.use(`/api${path}`, router);
+  app.use(path, router);
+});
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+const handleHealth = (req, res) => {
   const dbConnected = getIsConnected();
   res.status(200).json({
     status: 'OK',
@@ -44,7 +51,10 @@ app.get('/api/health', (req, res) => {
       mongooseReadyState: mongoose.connection.readyState // 1 = connected, 0 = disconnected
     }
   });
-});
+};
+
+app.get('/api/health', handleHealth);
+app.get('/health', handleHealth);
 
 // Start Server & Initialize Database
 const startServer = (port) => {

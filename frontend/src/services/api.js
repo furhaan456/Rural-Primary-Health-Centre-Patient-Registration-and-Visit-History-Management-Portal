@@ -1,8 +1,12 @@
 // Axios API client with automatic JWT token insertion
 import axios from 'axios';
 
+let rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+rawBaseUrl = rawBaseUrl.replace(/\/+$/, '');
+const baseURL = rawBaseUrl.endsWith('/api') ? rawBaseUrl : `${rawBaseUrl}/api`;
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
+  baseURL
 });
 
 // Interceptor to attach JWT authorization token to every outgoing request
