@@ -5,7 +5,8 @@ import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import API from '../services/api';
 import { AuthContext } from '../context/AuthContext';
-import { Stethoscope, Search, Calendar, RefreshCw, UserCheck } from 'lucide-react';
+import { Stethoscope, Search, Calendar, RefreshCw, UserCheck, Clock } from 'lucide-react';
+import { useToast } from '../components/Toast';
 
 const DoctorDashboard = () => {
   const [queue, setQueue] = useState([]);
@@ -19,6 +20,19 @@ const DoctorDashboard = () => {
   const { user } = useContext(AuthContext);
   const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
+  const toast = useToast();
+  const [countdown, setCountdown] = useState(60);
+
+  // Auto-refresh queue every 60 seconds
+  useEffect(() => {
+    const countdownTimer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) { fetchData(); return 60; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(countdownTimer);
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -60,13 +74,14 @@ const DoctorDashboard = () => {
     try {
       const res = await API.put(`/visits/${visitId}/reassign-doctor`, { newDoctorId: reassignDoctorId });
       if (res.data.success) {
-        alert('Doctor reassigned successfully!');
+        toast('Doctor reassigned successfully!', 'success');
         setReassigning(null);
         setReassignDoctorId('');
+        setCountdown(60);
         fetchData(); // Refresh queue
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to reassign doctor.');
+      toast(err.response?.data?.message || 'Failed to reassign doctor.', 'error');
     }
   };
 
@@ -109,12 +124,13 @@ const DoctorDashboard = () => {
                   <span>Today's Patient Queue</span>
                 </h3>
                 <button
-                  onClick={fetchData}
-                  className="text-xs text-teal-600 hover:text-teal-800 flex items-center space-x-1"
+                  onClick={() => { fetchData(); setCountdown(60); }}
+                  className="text-xs text-teal-600 hover:text-teal-800 flex items-center space-x-1 bg-teal-50 px-2 py-1 rounded-lg border border-teal-200"
                   title="Refresh queue"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   <span>Refresh</span>
+                  <span className="ml-1 font-mono text-slate-400">{countdown}s</span>
                 </button>
               </div>
 

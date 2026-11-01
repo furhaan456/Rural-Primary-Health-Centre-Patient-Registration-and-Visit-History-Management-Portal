@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import API from '../services/api';
 import { Ticket, Save, AlertCircle } from 'lucide-react';
+import { useToast } from '../components/Toast';
 
 const VisitScreen = () => {
   const [searchParams] = useSearchParams();
@@ -26,6 +27,7 @@ const VisitScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -63,7 +65,7 @@ const VisitScreen = () => {
     try {
       const res = await API.post('/visits', formData);
       if (res.data.success) {
-        alert(`OPD Visit Token #${res.data.tokenNumber} Generated Successfully!`);
+        toast(`OPD Visit Token #${res.data.tokenNumber} Generated Successfully!`, 'success');
         navigate('/reception/dashboard');
       }
     } catch (err) {

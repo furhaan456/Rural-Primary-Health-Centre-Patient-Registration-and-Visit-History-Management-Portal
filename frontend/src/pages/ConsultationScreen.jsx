@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import API from '../services/api';
 import { Stethoscope, Plus, Trash2, Save, Calendar, AlertCircle } from 'lucide-react';
+import { useToast } from '../components/Toast';
 
 const ConsultationScreen = () => {
   const { id: visitId } = useParams();
@@ -21,6 +22,7 @@ const ConsultationScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     const fetchVisit = async () => {
@@ -95,7 +97,7 @@ const ConsultationScreen = () => {
         });
       }
 
-      alert('Consultation and Prescription recorded successfully!');
+      toast('Consultation and Prescription saved successfully!', 'success');
       navigate('/doctor/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit consultation.');

@@ -4,11 +4,13 @@ import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import API from '../services/api';
 import { Calendar, CheckCircle2 } from 'lucide-react';
+import { useToast } from '../components/Toast';
 
 const FollowUpsScreen = () => {
   const [followUps, setFollowUps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(null);
+  const toast = useToast();
 
   const fetchFollowUps = async () => {
     try {
@@ -35,8 +37,10 @@ const FollowUpsScreen = () => {
         // Remove from list since it's now completed
         setFollowUps((prev) => prev.filter((f) => f.id !== id));
       }
+        toast('Follow-up marked as completed!', 'success');
+      }
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to mark as completed.');
+      toast(err.response?.data?.message || 'Failed to mark as completed.', 'error');
     } finally {
       setCompleting(null);
     }

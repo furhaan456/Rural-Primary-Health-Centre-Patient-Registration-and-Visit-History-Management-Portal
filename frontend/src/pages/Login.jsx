@@ -1,28 +1,28 @@
-// User authentication login page with role demo presets
+// Login — full-screen gradient with glassmorphism card and animated background
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Activity, Lock, Mail, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Activity, Lock, Mail, AlertCircle, ShieldCheck, Heart, Stethoscope } from 'lucide-react';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail]         = useState('');
+  const [password, setPassword]   = useState('');
+  const [error, setError]         = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activePreset, setActivePreset] = useState(null);
 
-  const { login } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { login }  = useContext(AuthContext);
+  const navigate   = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
-
     try {
-      const loggedUser = await login(email, password);
-      if (loggedUser.role === 'admin') navigate('/admin/dashboard');
-      else if (loggedUser.role === 'doctor') navigate('/doctor/dashboard');
-      else navigate('/reception/dashboard');
+      const u = await login(email, password);
+      if (u.role === 'admin')        navigate('/admin/dashboard');
+      else if (u.role === 'doctor')  navigate('/doctor/dashboard');
+      else                           navigate('/reception/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check credentials.');
     } finally {
@@ -30,100 +30,118 @@ const Login = () => {
     }
   };
 
-  const fillPreset = (roleEmail, rolePass) => {
-    setEmail(roleEmail);
-    setPassword(rolePass);
+  const presets = [
+    { role: 'Admin',        email: 'admin@phc.org',         pass: 'Admin@123',   color: 'from-violet-500 to-indigo-600' },
+    { role: 'Doctor',       email: 'doctor@phc.org',        pass: 'Doctor@123',  color: 'from-teal-500 to-emerald-600' },
+    { role: 'Receptionist', email: 'receptionist@phc.org',  pass: 'Recept@123',  color: 'from-sky-500 to-cyan-600' },
+  ];
+
+  const fillPreset = (p) => {
+    setEmail(p.email);
+    setPassword(p.pass);
+    setActivePreset(p.role);
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col justify-center items-center px-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-        {/* Header */}
-        <div className="bg-teal-700 p-6 text-white text-center">
-          <div className="inline-flex bg-white text-teal-700 p-3 rounded-full mb-3 shadow">
-            <Activity className="h-8 w-8" />
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4"
+         style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0369a1 50%, #4f46e5 100%)' }}>
+
+      {/* Animated background blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-teal-400/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl animate-pulse" style={{animationDelay:'1s'}}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-cyan-400/10 rounded-full blur-3xl animate-pulse" style={{animationDelay:'0.5s'}}></div>
+      </div>
+
+      {/* Floating icons */}
+      <div className="absolute top-16 left-16 opacity-10 animate-bounce" style={{animationDuration:'3s'}}><Heart className="h-12 w-12 text-white" /></div>
+      <div className="absolute bottom-16 right-16 opacity-10 animate-bounce" style={{animationDuration:'4s',animationDelay:'1s'}}><Stethoscope className="h-12 w-12 text-white" /></div>
+
+      {/* Card */}
+      <div className="relative w-full max-w-md animate-fade-in-up">
+        <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl overflow-hidden">
+
+          {/* Header */}
+          <div className="p-8 pb-6 text-center text-white">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur rounded-2xl border border-white/30 mb-4 animate-pulse-glow">
+              <Activity className="h-10 w-10 text-white" />
+            </div>
+            <h2 className="text-3xl font-extrabold tracking-tight">Rural PHC Portal</h2>
+            <p className="text-white/70 text-sm mt-1">Patient Registration & Visit Management System</p>
           </div>
-          <h2 className="text-2xl font-bold">Rural PHC Portal</h2>
-          <p className="text-teal-100 text-sm mt-1">Patient Registration & Visit Manager</p>
-        </div>
 
-        {/* Form */}
-        <div className="p-6">
-          {error && (
-            <div className="mb-4 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg flex items-center space-x-2 text-sm">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
-              <div className="relative">
-                <Mail className="h-5 w-5 text-slate-400 absolute left-3 top-2.5" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@phc.org"
-                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                />
+          {/* Form */}
+          <div className="bg-white rounded-t-3xl p-8 pt-6">
+            {error && (
+              <div className="mb-4 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl flex items-center space-x-2 text-sm animate-fade-in">
+                <AlertCircle className="h-5 w-5 shrink-0" />
+                <span>{error}</span>
               </div>
-            </div>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-              <div className="relative">
-                <Lock className="h-5 w-5 text-slate-400 absolute left-3 top-2.5" />
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email Address</label>
+                <div className="relative">
+                  <Mail className="h-4.5 w-4.5 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="email" required value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@phc.org"
+                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-400 focus:border-teal-400 outline-none bg-slate-50 transition"
+                  />
+                </div>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2.5 rounded-lg shadow-md transition text-sm"
-            >
-              {isSubmitting ? 'Authenticating...' : 'Sign In to Portal'}
-            </button>
-          </form>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Password</label>
+                <div className="relative">
+                  <Lock className="h-4.5 w-4.5 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="password" required value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-400 focus:border-teal-400 outline-none bg-slate-50 transition"
+                  />
+                </div>
+              </div>
 
-          {/* Quick Demo Login Presets */}
-          <div className="mt-6 border-t border-slate-200 pt-4">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center space-x-1">
-              <ShieldCheck className="h-4 w-4 text-teal-600" />
-              <span>Quick Demo Sign-In Presets</span>
-            </p>
-            <div className="grid grid-cols-3 gap-2">
               <button
-                type="button"
-                onClick={() => fillPreset('admin@phc.org', 'Admin@123')}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium py-1.5 px-2 rounded border border-slate-300 transition text-center"
+                type="submit" disabled={isSubmitting}
+                className="w-full py-3 rounded-xl font-bold text-white shadow-lg transition text-sm disabled:opacity-60"
+                style={{ background: 'linear-gradient(135deg, #0f766e, #0369a1)' }}
               >
-                Admin
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center space-x-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    <span>Authenticating...</span>
+                  </span>
+                ) : 'Sign In to Portal →'}
               </button>
-              <button
-                type="button"
-                onClick={() => fillPreset('doctor@phc.org', 'Doctor@123')}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium py-1.5 px-2 rounded border border-slate-300 transition text-center"
-              >
-                Doctor
-              </button>
-              <button
-                type="button"
-                onClick={() => fillPreset('receptionist@phc.org', 'Recept@123')}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium py-1.5 px-2 rounded border border-slate-300 transition text-center"
-              >
-                Receptionist
-              </button>
+            </form>
+
+            {/* Quick Demo Presets */}
+            <div className="mt-5 border-t border-slate-100 pt-4">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center space-x-1">
+                <ShieldCheck className="h-3.5 w-3.5 text-teal-500" />
+                <span>Quick Demo Sign-In</span>
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {presets.map((p) => (
+                  <button
+                    key={p.role} type="button"
+                    onClick={() => fillPreset(p)}
+                    className={`py-2 px-1 rounded-xl text-xs font-bold text-white transition shadow-md bg-gradient-to-br ${p.color} ${
+                      activePreset === p.role ? 'ring-2 ring-offset-1 ring-teal-400 scale-105' : 'hover:scale-105'
+                    } transform`}
+                  >
+                    {p.role}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
