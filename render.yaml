@@ -14,3 +14,4 @@ services:
         value: phc_super_secret_jwt_key_2026_rural_health
       - key: MONGODB_URI
         value: mongodb+srv://mohamedfurhaana_db_user:furhaan786@cluster0.9awhf9e.mongodb.net/phc_portal?appName=Cluster0
+

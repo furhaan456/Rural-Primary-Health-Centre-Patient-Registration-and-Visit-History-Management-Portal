@@ -1,7 +1,7 @@
-// Express Router for Visit endpoints (/api/visits)
+// Visit management controller for OPD token queue, vitals, and visit history with MongoDB Atlas support
 const express = require('express');
 const router = express.Router();
-const { createVisit, getTodayQueue, getPatientVisits, updateVisitDiagnosis, getVisitById } = require('../controllers/visitController');
+const { createVisit, getTodayQueue, getPatientVisits, updateVisitDiagnosis, getVisitById, reassignDoctor } = require('../controllers/visitController');
 const { verifyToken } = require('../middleware/authMiddleware');
 const { authorizeRoles } = require('../middleware/roleMiddleware');
 
@@ -19,5 +19,8 @@ router.post('/', verifyToken, authorizeRoles('admin', 'receptionist'), createVis
 
 // Record diagnosis (Doctor, Admin)
 router.put('/:id/diagnosis', verifyToken, authorizeRoles('admin', 'doctor'), updateVisitDiagnosis);
+
+// Reassign doctor for a visit (Admin only)
+router.put('/:id/reassign-doctor', verifyToken, authorizeRoles('admin'), reassignDoctor);
 
 module.exports = router;

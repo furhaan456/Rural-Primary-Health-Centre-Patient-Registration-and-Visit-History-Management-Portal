@@ -130,4 +130,27 @@ const getUpcomingFollowUps = async (req, res) => {
   }
 };
 
-module.exports = { createFollowUp, getUpcomingFollowUps };
+// Mark a follow-up as completed
+const completeFollowUp = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const followUpIdNum = Number(id);
+
+    if (getIsConnected()) {
+      const existing = await FollowUp.findOne({ id: followUpIdNum }).lean();
+      if (!existing) return res.status(404).json({ success: false, message: 'Follow-up not found.' });
+      await FollowUp.updateOne({ id: followUpIdNum }, { $set: { status: 'completed' } });
+    } else {
+      const idx = memoryDb.follow_ups.findIndex(f => f.id === followUpIdNum);
+      if (idx === -1) return res.status(404).json({ success: false, message: 'Follow-up not found.' });
+      memoryDb.follow_ups[idx].status = 'completed';
+    }
+
+    return res.status(200).json({ success: true, message: 'Follow-up marked as completed.' });
+  } catch (error) {
+    console.error('Complete Follow-Up Error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to complete follow-up.' });
+  }
+};
+
+module.exports = { createFollowUp, getUpcomingFollowUps, completeFollowUp };

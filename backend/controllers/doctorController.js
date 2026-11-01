@@ -139,4 +139,29 @@ const createDoctor = async (req, res) => {
   }
 };
 
-module.exports = { getDoctors, createDoctor };
+// Toggle doctor active/inactive status (Admin only)
+const toggleDoctorStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const userIdNum = Number(userId);
+
+    if (getIsConnected()) {
+      const doctor = await User.findOne({ id: userIdNum, role: 'doctor' }).lean();
+      if (!doctor) return res.status(404).json({ success: false, message: 'Doctor not found.' });
+      const newStatus = doctor.status === 'active' ? 'inactive' : 'active';
+      await User.updateOne({ id: userIdNum }, { $set: { status: newStatus } });
+      return res.status(200).json({ success: true, message: `Doctor marked as ${newStatus}.`, status: newStatus });
+    } else {
+      const idx = memoryDb.users.findIndex(u => u.id === userIdNum && u.role === 'doctor');
+      if (idx === -1) return res.status(404).json({ success: false, message: 'Doctor not found.' });
+      const newStatus = memoryDb.users[idx].status === 'active' ? 'inactive' : 'active';
+      memoryDb.users[idx].status = newStatus;
+      return res.status(200).json({ success: true, message: `Doctor marked as ${newStatus}.`, status: newStatus });
+    }
+  } catch (error) {
+    console.error('Toggle Doctor Status Error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to update doctor status.' });
+  }
+};
+
+module.exports = { getDoctors, createDoctor, toggleDoctorStatus };

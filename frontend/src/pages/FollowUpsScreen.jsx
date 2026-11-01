@@ -1,29 +1,46 @@
-// Follow-up appointment schedule viewer screen
+// Follow-up appointment schedule viewer screen with mark-complete action
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import API from '../services/api';
-import { Calendar, User, Phone, CheckCircle2 } from 'lucide-react';
+import { Calendar, CheckCircle2 } from 'lucide-react';
 
 const FollowUpsScreen = () => {
   const [followUps, setFollowUps] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [completing, setCompleting] = useState(null);
+
+  const fetchFollowUps = async () => {
+    try {
+      const res = await API.get('/follow-ups/upcoming');
+      if (res.data.success) {
+        setFollowUps(res.data.followUps);
+      }
+    } catch (err) {
+      console.error('Error fetching follow-ups:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchFollowUps = async () => {
-      try {
-        const res = await API.get('/follow-ups/upcoming');
-        if (res.data.success) {
-          setFollowUps(res.data.followUps);
-        }
-      } catch (err) {
-        console.error('Error fetching follow-ups:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchFollowUps();
   }, []);
+
+  const handleComplete = async (id) => {
+    setCompleting(id);
+    try {
+      const res = await API.put(`/follow-ups/${id}/complete`);
+      if (res.data.success) {
+        // Remove from list since it's now completed
+        setFollowUps((prev) => prev.filter((f) => f.id !== id));
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to mark as completed.');
+    } finally {
+      setCompleting(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -55,6 +72,7 @@ const FollowUpsScreen = () => {
                       <th className="py-2.5 px-3">Contact Phone</th>
                       <th className="py-2.5 px-3">Reason</th>
                       <th className="py-2.5 px-3">Attending Doctor</th>
+                      <th className="py-2.5 px-3">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -66,6 +84,16 @@ const FollowUpsScreen = () => {
                         <td className="py-3 px-3 text-slate-600">{f.phone}</td>
                         <td className="py-3 px-3 text-slate-600">{f.reason}</td>
                         <td className="py-3 px-3 text-slate-600">{f.doctor_name || 'Dr. Ananya Roy'}</td>
+                        <td className="py-3 px-3">
+                          <button
+                            onClick={() => handleComplete(f.id)}
+                            disabled={completing === f.id}
+                            className="flex items-center space-x-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded text-xs font-medium disabled:opacity-50 transition"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <span>{completing === f.id ? 'Saving...' : 'Mark Complete'}</span>
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

@@ -32,8 +32,12 @@ const VisitScreen = () => {
       try {
         const res = await API.get('/doctors');
         if (res.data.success && res.data.doctors.length > 0) {
-          setDoctors(res.data.doctors);
-          setFormData((prev) => ({ ...prev, doctorId: res.data.doctors[0].user_id }));
+          // Only show active/available doctors in the dropdown
+          const activeDoctors = res.data.doctors.filter(d => d.status === 'active' || !d.status);
+          setDoctors(activeDoctors);
+          if (activeDoctors.length > 0) {
+            setFormData((prev) => ({ ...prev, doctorId: activeDoctors[0].user_id }));
+          }
         }
       } catch (err) {
         console.error('Error fetching doctor list:', err);
