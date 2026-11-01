@@ -41,7 +41,7 @@ const PatientProfile = () => {
   useEffect(() => {
     if (visits.length === 0) return;
     visits.forEach((v) => {
-      API.get(`/prescriptions/${v.id}`)
+      API.get(`/prescriptions/visit/${v.id}`)
         .then((res) => {
           if (res.data.success) {
             setPrescriptions((prev) => ({ ...prev, [v.id]: res.data.prescription }));
@@ -191,7 +191,7 @@ const PatientProfile = () => {
                                   <td className="p-1">{p.medicine_name}</td>
                                   <td className="p-1">{p.dosage}</td>
                                   <td className="p-1">{p.frequency}</td>
-                                  <td className="p-1">{p.duration}</td>
+                                  <td className="p-1">{p.duration_days ? `${p.duration_days} days` : p.duration || '--'}</td>
                                   <td className="p-1">{p.instructions}</td>
                                 </tr>
                               ))}
